@@ -1,0 +1,32 @@
+{
+  "name": "redux-api-interceptor",
+  "version": "1.0.0",
+  "description": "A Redux middleware for intercepting API calls.",
+  "main": "src/index.js",
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "redux-api-middleware": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hamxabaig/redux-api-interceptor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hamxabaig/redux-api-interceptor/issues"
+  },
+  "keywords": [
+    "redux",
+    "interceptor",
+    "actions",
+    "redux-interceptor",
+    "middleware",
+    "universal",
+    "react",
+    "isomorphic",
+    "replay"
+  ],
+  "author": "Hamza Baig <hamzabaig18@gmail.com>",
+  "license": "MIT"
+}
