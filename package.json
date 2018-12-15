@@ -1,7 +1,7 @@
 {
-  "name": "redux-api-interceptor",
+  "name": "redux-api-middleware-interceptor",
   "version": "1.0.0",
-  "description": "A Redux middleware for intercepting API calls.",
+  "description": "A Redux API middleware for intercepting API calls.",
   "main": "src/index.js",
   "files": [
     "src"
@@ -28,5 +28,8 @@
     "replay"
   ],
   "author": "Hamza Baig <hamzabaig18@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "redux-api-middleware": "^2.3.0"
+  }
 }
