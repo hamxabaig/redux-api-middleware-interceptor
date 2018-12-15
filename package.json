@@ -1,6 +1,6 @@
 {
   "name": "redux-api-middleware-interceptor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Redux API middleware for intercepting API calls.",
   "main": "src/index.js",
   "files": [
