@@ -1,41 +1,42 @@
-# redux-api-interceptor : Intercepting APIs with redux-api-middleware made easy
+# Intercepting APIs with redux-api-middleware made easy
 
 Building single page applications and utilising some kind of API ? Probably you'd want to 
 include some kind of `JWT` or you'd want to preppend base URL to all of your http requests ?
-Well `redux-api-inteceptor` does that kind of stuff for you automatically.
+Well `redux-api-middleware-interceptor` does that kind of stuff for you automatically.
 
 ## 1.1 Installation
-npm: `npm install redux-api-interceptor --save`
+npm: `npm install redux-api-middleware-interceptor --save`
 
 *OR*
 
-yarn: `yarn add redux-api-interceptor`
+yarn: `yarn add redux-api-middleware-interceptor`
 
-Note: You must have [redux-api-middleware](https://github.com/agraboso/redux-api-middleware) >= 2.0.0 installed as peer dependency.
+Note: You must have [redux-api-middleware](https://github.com/agraboso/redux-api-middleware) ^2.0.0 installed as peer dependency.
 
 ## 1.2 Usage
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
 import interceptor from 'redux-api-interceptor';
+import { CALL_API, apiMiddleware } from 'redux-api-middleware';
 
-const apiInterceptorMiddlware = interceptor(defaultHeaders, eventFuncs);
+const apiMiddlewareInterceptor = interceptor(configObj);
 
 const store = createStore(
   reducer,
-  applyMiddleware(apiInterceptorMiddlware, thunk)
+  applyMiddleware(apiMiddlewareInterceptor, apiMiddleware, thunk) <-- the interceptor must be before apiMiddleware
 );
 ```
 
 
 ## 1.3 API
 
-`redux-api-interceptor` exports a function that when called with headers and functions gives you a middleware that acts as an interceptor:
+`redux-api-interceptor` exports a function that when called with config object returns you a middleware that acts as an interceptor:
 
 ```js
-interceptor(headers, funcs) <-- returns a redux middleware
+interceptor(configObj) <-- returns a redux middleware
 ```
-### 1.3.1 headers (object|function)
+### 1.3.1 configObj.headers (object|function)
 
 Usefull when you want to add additional headers to all of your routes.
 
@@ -50,14 +51,13 @@ import interceptor from 'redux-api-interceptor';
 
 const store = createStore(
   reducer,
-  applyMiddleware(interceptor({'content-type': 'application/json'}, funcs), thunk)
+  applyMiddleware(interceptor({ headers: {'content-type': 'application/json'}), thunk)
 );
 ```
 
-or if you want more customised solution like adding JWT then you can pass a `function` instead of `object`. The first parameter of it will be the redux `state` and the second parameter will
-contain the passed `headers` like so:
+or if you want more customised solution like adding JWT then you can pass a `function` instead of `object`. The first parameter of it will be the already present headers and second will be redux `state` like so:
 
-> Note: It should return an object
+> Note: It should return an object otherwise it'll default to original headers
 
 ```js
 import { applyMiddleware, createStore } from 'redux';
@@ -66,9 +66,9 @@ import interceptor from 'redux-api-interceptor';
 
 const store = createStore(
   reducer,
-  applyMiddleware(interceptor((state, passedHeaders) => {
+  applyMiddleware(interceptor((origHeaders, state) => {
     // auth being a reducer
-    const headers = Object.assign({}, headers);
+    const headers = Object.assign({}, origHeaders);
     if (state.auth.jwt) {
       headers['Authorization'] = `Bearer ${state.auth.jwt}`;
     }
@@ -77,11 +77,10 @@ const store = createStore(
 );
 ```
 
-## 1.3.2 funcs (object)
 
-Useful when you want to do something when request fails (e.g showing a `toastr` automatically or logging out User automatically if `statusCode` is 401 :D), when request is success or when request is initiated (e.g showing a Youtube like loader and hiding when request resolves)
+There are some Useful functions which you can use when you want to do something like when request fails (e.g showing a `toastr` automatically or logging out User automatically if `statusCode` is 401 :D), when request is success or when request is initiated (e.g showing a Youtube like loader and hiding when request resolves)
 
-### - getURL(state: object, passedUrl: string): string
+## 1.3.2 configObj.getURL(passedUrl: string, state: object): string
 
 Usefull when you don't want to include base URL to all of your http requests. e.g on `production` API url can be different than `development` environment.
 
@@ -100,12 +99,12 @@ import interceptor from 'redux-api-interceptor';
 const store = createStore(
   reducer,
   applyMiddleware(interceptor({}, {
-    getURL: (state, passedURL) => `http://abc.com${passedUrl}`
+    getURL: (passedURL, state) => `http://abc.com${passedUrl}`
   }), thunk)
 );
 ```
 
-### - onRequestInit(state: object)
+## 1.3.3 onRequestInit(state: object)
 
 Usefull when you don't want to show a Youtube like loader when a request is initiated.
 
@@ -128,7 +127,7 @@ const store = createStore(
 );
 ```
 
-### - onRequestSuccess(state: object, response: object)
+### 1.3.4 onRequestSuccess(state: object, response: object)
 
 Usefull when you want to do something when request has a success response. E.g hiding the Youtube like loader.
 
@@ -151,7 +150,7 @@ const store = createStore(
 );
 ```
 
-### - onRequestError(state: object, response: object)
+### 1.3.5 onRequestError(state: object, response: object)
 
 Usefull when you want to do something when request has an error response. E.g Logging out of the app if endpoint returns a 401 code.
 
@@ -168,7 +167,7 @@ const store = createStore(
   applyMiddleware(interceptor({}, {
     onRequestError: (state, response) => {
       // logout the user if 401 response
-      if (response.statusCode === 401) {
+      if (response.status_code === 401) {
         // logout user
       }
     }

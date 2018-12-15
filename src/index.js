@@ -4,73 +4,86 @@ const isFunction = func => (typeof func === "function");
 const isObject = obj => (typeof obj === 'object');
 const throwError = (name, expected) => {throw `Expected '${name}' to be ${expected}`};
 
-const getHeaders = (headerParams, origHeaders) => {
-  const headers = isFunction(headerParams) ? opHeaders(getState(), origHeaders) : headerParams;
-  return isObject(headers) ? headers : {};
+const getHeaders = (headerParams, origHeaders = {}, state) => {
+  const headers = isFunction(headerParams) ? headerParams(origHeaders, state) : headerParams;
+  return isObject(headers) ? headers : origHeaders;
 };
 
-export default (opHeaders, funcs = {}) => ({ getState }) => next => action => {
+const getCustomURL = (url, config) => {
+  if (
+    !/^((http|https|ftp):\/\/)/i.test(url) &&
+    config.getURL &&
+    (isFunction(config.getURL) || throwError('getURL', 'Function'))
+  ) {
+    const customURL = config.getURL(url, state);
+    if (!customURL) throwError('return value of getURL', 'String')
+    return customURL;
+  }
+  return url;
+}
+
+/**
+ * configObj = {
+ *  headers: Object|Function,
+ *  getURL: Function,
+ *  onRequestInit: Function,
+ *  onRequestSuccess: Function,
+ *  onRequestError: Function
+ * }
+ */
+export default (configObj = {}) => ({ getState }) => next => action => {
   const callApi = action[CALL_API];
   // Check if this action is a redux-api-middleware action.
   if (callApi) {
     const state = getState();
-    const headers = getHeaders(opHeaders, callApi.headers);
-    // Prepend API base URL to endpoint if it does not already contain a valid base URL.
-    if (!/^((http|https|ftp):\/\/)/i.test(callApi.endpoint) && funcs.getBaseURL) {
-      if (isFunction(funcs.getBaseURL)) {
-        const baseUrl = funcs.getURL(state, callApi.endpoint) || '';
-        callApi.endpoint = baseUrl || callApi.endpoint;
-      } else {
-        throwError('getBaseURL', 'Function');
-      }
-    }
 
-    // Set headers to empty object if undefined.
-    if (!Object.keys(callApi.headers || {}).length) {
-      callApi.headers = {};
-    }
+    // Set headers
+    callApi.headers = getHeaders(configObj.headers, callApi.headers, state);
 
-    // Extend the headers with given headers
-    if (Object.keys(headers).length > 0) {
-      callApi.headers = Object.assign({}, callApi.headers, headers);
-    }
+    // GET CUSTOM API URL if getURL func exist in config obj
+    callApi.endpoint = getCustomURL(callApi.endpoint, configObj);
 
-    // add response interceptor to watch on 401 unauthorized calls
-    if (funcs.onRequestInit && (isFunction(funcs.onRequestInit) ? true : throwError('onRequestInit', 'Function'))) {
+    // add response interceptor to watch on request calls
+    if (configObj.onRequestInit && (isFunction(configObj.onRequestInit) ? true : throwError('onRequestInit', 'Function'))) {
       const type = callApi.types[0];
       callApi.types[0] = {
         type,
         payload: (dispatchedAction, state, res) => {
-          funcs.onRequestInit(state);
+          configObj.onRequestInit(state);
           return res;
         }
       };
     }
 
-    if (funcs.onRequestSuccess && (isFunction(funcs.onRequestSuccess) ? true : throwError('onRequestSuccess', 'Function'))) {
+    // add response interceptor to watch on success calls
+    if (configObj.onRequestSuccess && (isFunction(configObj.onRequestSuccess) ? true : throwError('onRequestSuccess', 'Function'))) {
       const type = callApi.types[1];
       callApi.types[1] = {
         type,
         payload: (dispatchedAction, state, res) => {
-          const json = res.json();
-          funcs.onRequestSuccess(state, json);
-          return json;
+          const promise = res.json()
+          promise.then((json) => {
+            configObj.onRequestSuccess(state, Object.assign({}, json));
+          });
+          return promise;
         }
       };
     }
 
-    if (funcs.onRequestError && (isFunction(funcs.onRequestError) ? true : throwError('onRequestError', 'Function'))) {
+    // add response interceptor to watch on error calls
+    if (configObj.onRequestError && (isFunction(configObj.onRequestError) ? true : throwError('onRequestError', 'Function'))) {
       const type = callApi.types[2];
       callApi.types[2] = {
         type,
         payload: (dispatchedAction, state, res) => {
-          const json = res.json();
-          funcs.onRequestError(state, json);
-          return json;
+          const promise = res.json()
+          promise.then((json = {}) => {
+            configObj.onRequestError(state, Object.assign({ status_code: res.status }, json));
+          });
+          return promise;
         }
       };
     }
-    
   }
 
   // Pass the FSA to the next action.
