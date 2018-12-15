@@ -17,7 +17,7 @@ Note: You must have [redux-api-middleware](https://github.com/agraboso/redux-api
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
-import interceptor from 'redux-api-interceptor';
+import interceptor from 'redux-api-middleware-interceptor';
 import { CALL_API, apiMiddleware } from 'redux-api-middleware';
 
 const apiMiddlewareInterceptor = interceptor(configObj);
@@ -31,7 +31,7 @@ const store = createStore(
 
 ## 1.3 API
 
-`redux-api-interceptor` exports a function that when called with config object returns you a middleware that acts as an interceptor:
+`redux-api-middleware-interceptor` exports a function that when called with config object returns you a middleware that acts as an interceptor:
 
 ```js
 interceptor(configObj) <-- returns a redux middleware
@@ -47,7 +47,7 @@ You can either pass an Object:
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
-import interceptor from 'redux-api-interceptor';
+import interceptor from 'redux-api-middleware-interceptor';
 
 const store = createStore(
   reducer,
@@ -62,18 +62,23 @@ or if you want more customised solution like adding JWT then you can pass a `fun
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
-import interceptor from 'redux-api-interceptor';
+import interceptor from 'redux-api-middleware-interceptor';
 
 const store = createStore(
   reducer,
-  applyMiddleware(interceptor((origHeaders, state) => {
-    // auth being a reducer
-    const headers = Object.assign({}, origHeaders);
-    if (state.auth.jwt) {
-      headers['Authorization'] = `Bearer ${state.auth.jwt}`;
-    }
-    return headers;
-  }, funcs), thunk)
+  applyMiddleware(
+    interceptor({
+      headers: (origHeaders, state) => {
+        // auth being a reducer
+        const headers = Object.assign({}, origHeaders);
+        if (state.auth.jwt) {
+          headers['Authorization'] = `Bearer ${state.auth.jwt}`;
+        }
+        return headers;
+      }
+    ),
+    thunk
+  )
 );
 ```
 
@@ -94,11 +99,11 @@ Usefull when you don't want to include base URL to all of your http requests. e.
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
-import interceptor from 'redux-api-interceptor';
+import interceptor from 'redux-api-middleware-interceptor';
 
 const store = createStore(
   reducer,
-  applyMiddleware(interceptor({}, {
+  applyMiddleware(interceptor({
     getURL: (passedURL, state) => `http://abc.com${passedUrl}`
   }), thunk)
 );
@@ -114,11 +119,11 @@ Usefull when you don't want to show a Youtube like loader when a request is init
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
-import interceptor from 'redux-api-interceptor';
+import interceptor from 'redux-api-middleware-interceptor';
 
 const store = createStore(
   reducer,
-  applyMiddleware(interceptor({}, {
+  applyMiddleware(interceptor({
     onRequestInit: (state) => {
       // show a loader Loader.show()
    	  console.log('Do something');
@@ -137,11 +142,11 @@ Usefull when you want to do something when request has a success response. E.g h
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
-import interceptor from 'redux-api-interceptor';
+import interceptor from 'redux-api-middleware-interceptor';
 
 const store = createStore(
   reducer,
-  applyMiddleware(interceptor({}, {
+  applyMiddleware(interceptor({
     onRequestSuccess: (state, response) => {
       // show a loader Loader.hide()
    	  console.log('Do something');
@@ -160,11 +165,11 @@ Usefull when you want to do something when request has an error response. E.g Lo
 ```js
 import { applyMiddleware, createStore } from 'redux';
 import thunk from 'redux-thunk';
-import interceptor from 'redux-api-interceptor';
+import interceptor from 'redux-api-middleware-interceptor';
 
 const store = createStore(
   reducer,
-  applyMiddleware(interceptor({}, {
+  applyMiddleware(interceptor({
     onRequestError: (state, response) => {
       // logout the user if 401 response
       if (response.status_code === 401) {
