@@ -9,7 +9,7 @@ const getHeaders = (headerParams, origHeaders = {}, state) => {
   return isObject(headers) ? headers : origHeaders;
 };
 
-const getCustomURL = (url, config) => {
+const getCustomURL = (url, config, state) => {
   if (
     !/^((http|https|ftp):\/\/)/i.test(url) &&
     config.getURL &&
@@ -41,15 +41,15 @@ export default (configObj = {}) => ({ getState }) => next => action => {
     callApi.headers = getHeaders(configObj.headers, callApi.headers, state);
 
     // GET CUSTOM API URL if getURL func exist in config obj
-    callApi.endpoint = getCustomURL(callApi.endpoint, configObj);
+    callApi.endpoint = getCustomURL(callApi.endpoint, configObj, state);
 
     // add response interceptor to watch on request calls
     if (configObj.onRequestInit && (isFunction(configObj.onRequestInit) ? true : throwError('onRequestInit', 'Function'))) {
       const type = callApi.types[0];
       callApi.types[0] = {
         type,
-        payload: (dispatchedAction, state, res) => {
-          configObj.onRequestInit(state);
+        payload: (dispatchedAction, _state, res) => {
+          configObj.onRequestInit(_state);
           return res;
         }
       };
@@ -60,10 +60,10 @@ export default (configObj = {}) => ({ getState }) => next => action => {
       const type = callApi.types[1];
       callApi.types[1] = {
         type,
-        payload: (dispatchedAction, state, res) => {
+        payload: (dispatchedAction, _state, res) => {
           const promise = res.json()
           promise.then((json) => {
-            configObj.onRequestSuccess(state, Object.assign({}, json));
+            configObj.onRequestSuccess(_state, Object.assign({}, json));
           });
           return promise;
         }
@@ -75,10 +75,10 @@ export default (configObj = {}) => ({ getState }) => next => action => {
       const type = callApi.types[2];
       callApi.types[2] = {
         type,
-        payload: (dispatchedAction, state, res) => {
+        payload: (dispatchedAction, _state, res) => {
           const promise = res.json()
           promise.then((json = {}) => {
-            configObj.onRequestError(state, Object.assign({ status_code: res.status }, json));
+            configObj.onRequestError(_state, Object.assign({ status_code: res.status }, json));
           });
           return promise;
         }
