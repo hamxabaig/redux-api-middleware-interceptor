@@ -76,11 +76,17 @@ export default (configObj = {}) => ({ getState }) => next => action => {
       callApi.types[2] = {
         type,
         payload: (dispatchedAction, _state, res) => {
-          const promise = res.json()
-          promise.then((json = {}) => {
-            configObj.onRequestError(_state, Object.assign({ status_code: res.status }, json));
+          const clonedRes = res.clone();
+
+          res.text().then((text = {}) => {
+            try {
+              configObj.onRequestError(_state, Object.assign({ status_code: res.status }, JSON.parse(text)));
+            } catch (e) {
+              configObj.onRequestError(_state, { status_code: res.status, is_json: false, raw_res: text });
+            }
           });
-          return promise;
+
+          return clonedRes;
         }
       };
     }

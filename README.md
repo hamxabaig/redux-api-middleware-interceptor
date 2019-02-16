@@ -161,6 +161,7 @@ Usefull when you want to do something when request has an error response. E.g Lo
 
 > Note: 
 > - If onRequestSuccess provided is not a function, it'll throw an Error.
+> - If the response is not JSON, the library will return the ressult as `raw_res` with `is_json=false`.
 
 ```js
 import { applyMiddleware, createStore } from 'redux';
