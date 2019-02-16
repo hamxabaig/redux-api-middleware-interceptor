@@ -1,4 +1,4 @@
-import { CALL_API } from 'redux-api-middleware';
+import * as reduxAPIMiddelware from 'redux-api-middleware';
 
 const isFunction = func => (typeof func === "function");
 const isObject = obj => (typeof obj === 'object');
@@ -32,7 +32,7 @@ const getCustomURL = (url, config, state) => {
  * }
  */
 export default (configObj = {}) => ({ getState }) => next => action => {
-  const callApi = action[CALL_API];
+  const callApi = action[reduxAPIMiddelware.CALL_API] || action[reduxAPIMiddelware.RSAA];
   // Check if this action is a redux-api-middleware action.
   if (callApi) {
     const state = getState();
